@@ -27,6 +27,11 @@ DEBUG = True
 
 ALLOWED_HOSTS = []
 
+DATABASE_ROUTERS = [
+    'equipment_manager.routers.DefaultRouter',
+    'equipment_manager.routers.PostgreSQLRouter',
+    'equipment_manager.routers.MySQLRouter',
+]
 
 # Application definition
 
@@ -79,6 +84,22 @@ DATABASES = {
     'default': {
         'ENGINE': 'django.db.backends.sqlite3',
         'NAME': BASE_DIR / 'db.sqlite3',
+    },
+    'postgresql_db': {
+        'ENGINE': 'django.db.backends.postgresql',
+        'NAME': 'AZOS_Postgre_DB',
+        'USER': 'postgres',
+        'PASSWORD': 'admin',  
+        'HOST': 'localhost',              
+        'PORT': '5432',              
+    },
+    'mysql_db': {
+        'ENGINE': 'django.db.backends.mysql',
+        'NAME': 'your_mysql_db_name',
+        'USER': 'admin',
+        'PASSWORD': '1234',  
+        'HOST': 'localhost',
+        'PORT': '3306',
     }
 }
 
