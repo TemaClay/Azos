@@ -27,11 +27,7 @@ DEBUG = True
 
 ALLOWED_HOSTS = []
 
-DATABASE_ROUTERS = [
-    'equipment_manager.routers.DefaultRouter',
-    'equipment_manager.routers.PostgreSQLRouter',
-    'equipment_manager.routers.MySQLRouter',
-]
+
 
 # Application definition
 
@@ -176,4 +172,4 @@ AUTHENTICATION_BACKENDS = [
 ]
 
 LOGIN_REDIRECT_URL = '/'
-LOGOUT_REDIRECT_URL = '/accounts/login'
+LOGOUT_REDIRECT_URL = '/admin'
