@@ -1,7 +1,9 @@
-from django.urls import path
-from .views import EquipmentListCreateAPIView, EquipmentRetrieveUpdateDestroyAPIView
+from django.contrib import admin
+from django.urls import path, include
+from equipment import views
 
 urlpatterns = [
-    path('equipment/', EquipmentListCreateAPIView.as_view(), name='equipment-list'),
-    path('equipment/<int:pk>/', EquipmentRetrieveUpdateDestroyAPIView.as_view(), name='equipment-detail'),
+    path('admin/', admin.site.urls),
+    path('accounts/', include('django.contrib.auth.urls')),
+    path('', views.EquipmentListView.as_view(), name='equipment-list'),
 ]

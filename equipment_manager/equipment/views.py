@@ -1,11 +1,7 @@
-from rest_framework import generics
+from django.views.generic import ListView
 from .models import Equipment
-from .serializers import EquipmentSerializer
 
-class EquipmentListCreateAPIView(generics.ListCreateAPIView):
-    queryset = Equipment.objects.all()
-    serializer_class = EquipmentSerializer
-
-class EquipmentRetrieveUpdateDestroyAPIView(generics.RetrieveUpdateDestroyAPIView):
-    queryset = Equipment.objects.all()
-    serializer_class = EquipmentSerializer
+class EquipmentListView(ListView):
+    model = Equipment
+    template_name = 'equipment_list.html'
+    context_object_name = 'equipments'

@@ -1,16 +1,58 @@
 from django.db import models
 
-class Equipment(models.Model):
-    name = models.CharField(max_length=100)
-    article = models.DecimalField(max_digits=10, decimal_places=1, default='0')
-    serial_number = models.DecimalField(max_digits=10, decimal_places=1, default='0', unique = True)
-    status = models.CharField(max_length=20, choices=[
-        ('active', 'Active'),
-        ('inactive', 'Inactive'),
-        ('under_repair', 'Under Repair')
-    ])
-    created_at = models.DateTimeField(auto_now_add=True)
+class Place(models.Model):
+    name = models.CharField(max_length=255)
     
+    class Meta:
+        db_table = 'Places'  # Явное указание имени таблицы
 
-    def __str__(self):
-        return self.name
+class Status(models.Model):
+    name_of_status = models.CharField(max_length=255)
+    
+    class Meta:
+        db_table = 'Status'
+
+class Equipment(models.Model):
+    article = models.CharField(max_length=255, verbose_name='Артикул')
+    inventory_number = models.CharField(
+        max_length=255, 
+        unique=True, 
+        verbose_name='Инвентарный номер'
+    )
+    name = models.CharField(max_length=255, verbose_name='Название')
+    location = models.ForeignKey(
+        Place, 
+        on_delete=models.CASCADE, 
+        db_column='Location_id',
+        verbose_name='Локация'
+    )
+    status = models.ForeignKey(
+        Status, 
+        on_delete=models.CASCADE, 
+        db_column='Status_id',
+        verbose_name='Статус'
+    )
+    commissioning_date = models.CharField(  # Исправленная опечатка
+        max_length=255,
+        default = 'Не указано',
+        verbose_name='Дата ввода в эксплуатацию'
+    )
+    Equipment_manager = models.CharField(
+        max_length=255,
+        default='Не указано',  # Значение по умолчанию
+        verbose_name='Ответственный'
+    )
+    
+    class Meta:
+        db_table = 'Equipment'
+
+class Log(models.Model):
+    equipment = models.ForeignKey(Equipment, on_delete=models.CASCADE, db_column='Equipment_id')
+    destination = models.ForeignKey(Place, on_delete=models.CASCADE, db_column='Destination_id')
+    start_date_of_using = models.DateField()
+    application_number = models.CharField(max_length=255, blank=True)
+    end_date_of_using = models.DateField(null=True, blank=True)
+    name_of_receiver = models.CharField(max_length=255)
+    
+    class Meta:
+        db_table = 'Log'
