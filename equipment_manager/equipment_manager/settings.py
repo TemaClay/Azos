@@ -27,11 +27,6 @@ DEBUG = True
 
 ALLOWED_HOSTS = []
 
-DATABASE_ROUTERS = [
-    'equipment_manager.routers.DefaultRouter',
-    'equipment_manager.routers.PostgreSQLRouter',
-    'equipment_manager.routers.MySQLRouter',
-]
 
 # Application definition
 
@@ -91,7 +86,7 @@ DATABASES = {
         'USER': 'postgres',
         'PASSWORD': 'admin',  
         'HOST': 'localhost',              
-        'PORT': '5432',              
+        'PORT': '5432',             
     },
     'mysql_db': {
         'ENGINE': 'django.db.backends.mysql',
@@ -102,25 +97,6 @@ DATABASES = {
         'PORT': '3306',
     }
 }
-'''
-    'postgresql_db': {
-        'ENGINE': 'django.db.backends.postgresql',
-        'NAME': 'AZOS_Postgre_DB',
-        'USER': 'postgres',
-        'PASSWORD': 'admin',  
-        'HOST': 'localhost',              
-        'PORT': '5432',              
-    },
-    'mysql_db': {
-        'ENGINE': 'django.db.backends.mysql',
-        'NAME': 'your_mysql_db_name',
-        'USER': 'admin',
-        'PASSWORD': '1234',  
-        'HOST': 'localhost',
-        'PORT': '3306',
-    }
-    '''
-
 # Password validation
 # https://docs.djangoproject.com/en/5.1/ref/settings/#auth-password-validators
 
