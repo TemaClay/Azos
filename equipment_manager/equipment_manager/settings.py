@@ -27,7 +27,11 @@ DEBUG = True
 
 ALLOWED_HOSTS = []
 
-
+DATABASE_ROUTERS = [
+    'equipment_manager.routers.DefaultRouter',
+    'equipment_manager.routers.PostgreSQLRouter',
+    'equipment_manager.routers.MySQLRouter',
+]
 
 # Application definition
 
@@ -39,6 +43,7 @@ INSTALLED_APPS = [
     'django.contrib.messages',
     'django.contrib.staticfiles',
     'rest_framework',
+    'rest_framework_simplejwt',
     'equipment.apps.EquipmentConfig',
 ]
 
@@ -87,7 +92,25 @@ DATABASES = {
         'USER': 'postgres',
         'PASSWORD': 'admin',  
         'HOST': 'localhost',              
-        'PORT': '5432',             
+        'PORT': '5432',              
+    },
+    'mysql_db': {
+        'ENGINE': 'django.db.backends.mysql',
+        'NAME': 'azos_db',
+        'USER': 'root',
+        'PASSWORD': 'w++Fw++F',  
+        'HOST': 'localhost',
+        'PORT': '3306',
+    }
+}
+'''
+    'postgresql_db': {
+        'ENGINE': 'django.db.backends.postgresql',
+        'NAME': 'AZOS_Postgre_DB',
+        'USER': 'postgres',
+        'PASSWORD': 'admin',  
+        'HOST': 'localhost',              
+        'PORT': '5432',              
     },
     'mysql_db': {
         'ENGINE': 'django.db.backends.mysql',
@@ -97,7 +120,8 @@ DATABASES = {
         'HOST': 'localhost',
         'PORT': '3306',
     }
-}
+    '''
+
 # Password validation
 # https://docs.djangoproject.com/en/5.1/ref/settings/#auth-password-validators
 
@@ -144,8 +168,14 @@ REST_FRAMEWORK = {
         'rest_framework_simplejwt.authentication.JWTAuthentication',
     ],
     'DEFAULT_PERMISSION_CLASSES': [
+        'rest_framework.permissions.AllowAny',  # Разрешает доступ всем
+    ],
+    'DEFAULT_PERMISSION_CLASSES': [
         'rest_framework.permissions.IsAuthenticated',
-    ]
+    ],
+    'DEFAULT_RENDERER_CLASSES': [
+        'equipment.renderers.UTF8CharsetJSONRenderer',
+    ],
 }
 
 AUTHENTICATION_BACKENDS = [
@@ -153,4 +183,37 @@ AUTHENTICATION_BACKENDS = [
 ]
 
 LOGIN_REDIRECT_URL = '/'
-LOGOUT_REDIRECT_URL = '/admin'
+LOGOUT_REDIRECT_URL = '/accounts/login'
+
+from datetime import timedelta
+
+SIMPLE_JWT = {
+    'ACCESS_TOKEN_LIFETIME': timedelta(minutes=60),
+    'REFRESH_TOKEN_LIFETIME': timedelta(days=1),
+    'ROTATE_REFRESH_TOKENS': False,
+    'BLACKLIST_AFTER_ROTATION': True,
+    'UPDATE_LAST_LOGIN': False,
+
+    'ALGORITHM': 'HS256',
+    'SIGNING_KEY': SECRET_KEY,
+    'VERIFYING_KEY': None,
+    'AUDIENCE': None,
+    'ISSUER': None,
+    'JWK_URL': None,
+    'LEEWAY': 0,
+
+    'AUTH_HEADER_TYPES': ('Bearer',),
+    'AUTH_HEADER_NAME': 'HTTP_AUTHORIZATION',
+    'USER_ID_FIELD': 'id',
+    'USER_ID_CLAIM': 'user_id',
+    'USER_AUTHENTICATION_RULE': 'rest_framework_simplejwt.authentication.default_user_authentication_rule',
+
+    'AUTH_TOKEN_CLASSES': ('rest_framework_simplejwt.tokens.AccessToken',),
+    'TOKEN_TYPE_CLAIM': 'token_type',
+
+    'JTI_CLAIM': 'jti',
+
+    'SLIDING_TOKEN_REFRESH_EXP_CLAIM': 'refresh_exp',
+    'SLIDING_TOKEN_LIFETIME': timedelta(minutes=5),
+    'SLIDING_TOKEN_REFRESH_LIFETIME': timedelta(days=1),
+}

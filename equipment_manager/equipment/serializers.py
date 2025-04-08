@@ -1,7 +1,7 @@
 from rest_framework import serializers
-from .models import Equipment  # Импортируйте вашу модель
+from .models import Equipment
 
 class EquipmentSerializer(serializers.ModelSerializer):
     class Meta:
-        model = Equipment  # Укажите модель
-        fields = '__all__'  # Или выберите поля: ['id', 'name', 'serial_number', ...]
+        model = Equipment
+        fields = '__all__'
