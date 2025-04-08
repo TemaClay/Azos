@@ -92,9 +92,9 @@ DATABASES = {
     },
     'mysql_db': {
         'ENGINE': 'django.db.backends.mysql',
-        'NAME': 'your_mysql_db_name',
-        'USER': 'admin',
-        'PASSWORD': '1234',  
+        'NAME': 'azos_db',
+        'USER': 'root',
+        'PASSWORD': 'w++Fw++F',  
         'HOST': 'localhost',
         'PORT': '3306',
     }
