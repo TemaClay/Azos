@@ -48,7 +48,7 @@ class Equipment(models.Model):
 
 class Log(models.Model):
     equipment = models.ForeignKey(Equipment, on_delete=models.CASCADE, db_column='Equipment_id')
-    destination = models.ForeignKey(Place, on_delete=models.CASCADE, db_column='Destination_id')
+    destination = models.CharField(max_length=255, blank=True)
     start_date_of_using = models.DateField()
     application_number = models.CharField(max_length=255, blank=True)
     end_date_of_using = models.DateField(null=True, blank=True)
