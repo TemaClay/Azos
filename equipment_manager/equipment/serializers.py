@@ -5,4 +5,3 @@ class EquipmentSerializer(serializers.ModelSerializer):
     class Meta:
         model = Equipment  # Укажите модель
         fields = '__all__' 
-
