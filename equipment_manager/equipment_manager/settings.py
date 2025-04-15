@@ -41,6 +41,7 @@ INSTALLED_APPS = [
     'rest_framework',
     'rest_framework_simplejwt',
     'equipment.apps.EquipmentConfig',
+    'django_filters' ## для фильтрации оборудования
 ]
 
 MIDDLEWARE = [
@@ -143,10 +144,16 @@ DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 REST_FRAMEWORK = {
     'DEFAULT_AUTHENTICATION_CLASSES': [
         'rest_framework_simplejwt.authentication.JWTAuthentication',
+        'rest_framework.authentication.SessionAuthentication' ## DEVELOPMENT-ONLY! TODO: требуется сделать систему аутентификации в будущем
     ],
     'DEFAULT_PERMISSION_CLASSES': [
         'rest_framework.permissions.IsAuthenticated',
-    ]
+    ],
+    # для фильтрации backend'а
+    'DEFAULT_FILTER_BACKENDS': [
+        'django_filters.rest_framework.DjangoFilterBackend'
+    ],
+
 }
 
 AUTHENTICATION_BACKENDS = [

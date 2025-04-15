@@ -37,7 +37,7 @@ class Equipment(models.Model):
         default = 'Не указано',
         verbose_name='Дата ввода в эксплуатацию'
     )
-    Equipment_manager = models.CharField(
+    equipment_manager = models.CharField(
         max_length=255,
         default='Не указано',  # Значение по умолчанию
         verbose_name='Ответственный'
