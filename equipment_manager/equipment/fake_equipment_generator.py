@@ -38,8 +38,9 @@ for i in range(50):
         article=f"ART-{random.randint(1000, 9999)}",
         inventory_number=f"INV-{random.randint(100000, 999999)}",
         name=fake.word().capitalize() + " " + fake.word(),
-        location=random.choice(locations),
+        default_location=random.choice(locations),
         status=random.choice(statuses),
         equipment_manager=random.choice(managers),
-        commissioning_date=random.randint(1900, 2025)
+        commissioning_date=random.randint(1900, 2025),
+        location=fake.word()
     )
