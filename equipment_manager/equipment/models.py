@@ -25,7 +25,7 @@ class Equipment(models.Model):
         default= 1,
         on_delete=models.CASCADE, 
         db_column='default_location_id',
-        verbose_name='Локация'
+        verbose_name='Базовая локация'
     )
     status = models.ForeignKey(
         Status, 
@@ -63,3 +63,5 @@ class Log(models.Model):
     
     class Meta:
         db_table = 'Log'
+
+
