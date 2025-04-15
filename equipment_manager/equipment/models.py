@@ -20,10 +20,11 @@ class Equipment(models.Model):
         verbose_name='Инвентарный номер'
     )
     name = models.CharField(max_length=255, verbose_name='Название')
-    location = models.ForeignKey(
+    default_location = models.ForeignKey(
         Place, 
+        default= 1,
         on_delete=models.CASCADE, 
-        db_column='Location_id',
+        db_column='default_location_id',
         verbose_name='Локация'
     )
     status = models.ForeignKey(
@@ -42,6 +43,12 @@ class Equipment(models.Model):
         default='Не указано',  # Значение по умолчанию
         verbose_name='Ответственный'
     )
+    location = models.CharField(
+        max_length=255,
+        default = 'Не указано',
+        verbose_name = 'Текущая локация'
+    )
+
     
     class Meta:
         db_table = 'Equipment'

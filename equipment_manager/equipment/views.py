@@ -137,8 +137,7 @@ class EquipmentListAPIView(generics.ListAPIView):
     filter_backends = [DjangoFilterBackend, filters.SearchFilter]
 
     # Фильтрация по точному совпадению:
-    filterset_fields = ['equipment_manager', 'commissioning_date'] # TODO: потом добавить default_location ещё
-
+    filterset_fields = ['equipment_manager', 'commissioning_date', 'default_location'] 
     # Общий поиск по текстовым полям (по параметру ?search=...):
     search_fields = ['article', 'inventory_number', 'name']
 
