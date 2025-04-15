@@ -1,6 +1,8 @@
 from django.contrib import admin
 from django.urls import path, include
 from equipment import views
+from .views import EquipmentListAPIView
+
 from rest_framework_simplejwt.views import (
     TokenObtainPairView,
     TokenRefreshView,
@@ -12,4 +14,5 @@ urlpatterns = [
     path('equipment/', views.handle_equipment, name='equipment-handle'),
     path('token/', TokenObtainPairView.as_view(), name='token_obtain_pair'),
     path('token/refresh/', TokenRefreshView.as_view(), name='token_refresh'),
+    path('equipment/search', EquipmentListAPIView.as_view(), name='search-equipment-list'),
 ]

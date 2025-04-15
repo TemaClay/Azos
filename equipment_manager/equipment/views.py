@@ -1,6 +1,9 @@
 from django.views.generic import ListView
 from .models import Equipment
 from .serializers import EquipmentSerializer
+from rest_framework import generics, filters
+from django_filters.rest_framework import DjangoFilterBackend
+
 
 class EquipmentListView(ListView):
     model = Equipment
@@ -124,3 +127,29 @@ def delete_equipment(data):
             {"error": "Оборудование не найдено"},
             status=status.HTTP_404_NOT_FOUND
         )
+
+class EquipmentListAPIView(generics.ListAPIView):
+    permission_classes = [IsAuthenticated]  
+    queryset = Equipment.objects.all()
+    serializer_class = EquipmentSerializer
+
+    # Подключаем оба фильтрующих бэкенда:
+    filter_backends = [DjangoFilterBackend, filters.SearchFilter]
+
+    # Фильтрация по точному совпадению:
+    filterset_fields = ['equipment_manager', 'commissioning_date'] # TODO: потом добавить default_location ещё
+
+    # Общий поиск по текстовым полям (по параметру ?search=...):
+    search_fields = ['article', 'inventory_number', 'name']
+
+    def get_queryset(self):
+        queryset = super().get_queryset()
+
+        # Получаем параметр show_salvaged из строки запроса (по умолчанию пустая строка)
+        show_salvaged = self.request.query_params.get('show_salvaged', '').lower()
+        # иначе
+        if show_salvaged != 'true':
+            queryset = queryset.exclude(status_id=4)
+
+
+        return queryset
