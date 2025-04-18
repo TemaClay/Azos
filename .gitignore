@@ -1,16 +1,23 @@
-equipment_manager/equipment_manager/__pycache__/__init__.cpython-310.pyc
-equipment_manager/equipment_manager/__pycache__/routers.cpython-310.pyc
-equipment_manager/equipment_manager/__pycache__/settings.cpython-310.pyc
-equipment_manager/equipment_manager/__pycache__/urls.cpython-310.pyc
-equipment_manager/equipment_manager/__pycache__/wsgi.cpython-310.pyc
-equipment_manager/equipment/migrations/__pycache__/0001_initial.cpython-310.pyc
-equipment_manager/equipment/migrations/__pycache__/__init__.cpython-310.pyc
-equipment_manager/equipment/__pycache__/views.cpython-310.pyc
-equipment_manager/equipment/__pycache__/urls.cpython-310.pyc
-equipment_manager/equipment/__pycache__/serializers.cpython-310.pyc
-equipment_manager/equipment/__pycache__/models.cpython-310.pyc
-equipment_manager/equipment/__pycache__/apps.cpython-310.pyc
-equipment_manager/equipment/__pycache__/admin.cpython-310.pyc
-equipment_manager/equipment/__pycache__/__init__.cpython-310.pyc
-equipment_manager/equipment/migrations/
-equipment_manager/equipment/management/commands/__pycache__/
+# Django migrations (игнорировать все, кроме __init__.py)
+**/migrations/*.py
+!**/migrations/__init__.py
+
+# Python cache (включая management/commands)
+**/__pycache__/
+*.py[cod]
+
+# Статика и медиа
+staticfiles/
+media/
+
+# Специфичные пути для Windows
+equipment/management/commands/__pycache__/
+
+
+# Остальные настройки (пример)
+.env
+.venv/
+venv/
+.vscode/
+.idea/
+*.log
