@@ -3,7 +3,7 @@ from django.urls import path, include
 
 urlpatterns = [
     path('admin/', admin.site.urls),
-    path('api/', include('equipment.urls')), #Если пользователь переходит по http://localhost:8000/api/..., Django передаст эту часть URL в маршруты, определённые в приложении equipment.
+    path('', include('equipment.urls')), #Если пользователь переходит по http://localhost:8000/api/..., Django передаст эту часть URL в маршруты, определённые в приложении equipment.
 ]
 
 """

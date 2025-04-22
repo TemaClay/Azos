@@ -1,154 +1,102 @@
+# —————————————————————————————————————————
+# 1) Django HTML‑генерики
+# —————————————————————————————————————————
+from django.shortcuts import render
 from django.views.generic import ListView
+
+# —————————————————————————————————————————
+# 2) Django‑filters для DRF
+# —————————————————————————————————————————
+from django_filters.rest_framework import DjangoFilterBackend
+
+# —————————————————————————————————————————
+# 3) DRF core и миксины
+# —————————————————————————————————————————
+from rest_framework import filters, generics, status
+from rest_framework.authentication import BasicAuthentication, SessionAuthentication
+from rest_framework.permissions import IsAuthenticated
+from rest_framework.response import Response
+
+# —————————————————————————————————————————
+# 4) Локальные модели и сериализаторы
+# —————————————————————————————————————————
 from .models import Equipment
 from .serializers import EquipmentSerializer
-from rest_framework import generics, filters
-from django_filters.rest_framework import DjangoFilterBackend
 
 
 class EquipmentListView(ListView):
+    """
+    HTML‑страница: отображает весь список оборудования.
+    Используется в шаблоне 'equipment_list.html'.
+    """
     model = Equipment
     template_name = 'equipment_list.html'
     context_object_name = 'equipments'
 
-from django.shortcuts import render
-from rest_framework import generics
 
-from rest_framework import status
-import json
-from rest_framework.authentication import SessionAuthentication, BasicAuthentication
-from rest_framework.permissions import IsAuthenticated
-from rest_framework.response import Response
-from rest_framework.views import APIView
-from rest_framework.decorators import api_view
-import chardet
-
-class EquipmentCreate(generics.ListCreateAPIView):
+class EquipmentListCreateAPIView(generics.ListCreateAPIView):
+    """
+    API‑ручка:
+      • GET  /equipment/     — список с фильтрацией и поиском
+      • POST /equipment/     — создание нового объекта
+    """
+    # Базовый набор полей
     queryset = Equipment.objects.all()
     serializer_class = EquipmentSerializer
 
 
-class ExampleView(APIView):
-    authentication_classes = [SessionAuthentication, BasicAuthentication]
-    permission_classes = [IsAuthenticated]
-
-    def get(self, request, format=None):
-        content = {
-            'user': str(request.user),  # `django.contrib.auth.User` instance.
-            'auth': str(request.auth),  # None
-        }
-        return Response(content)
-
-@api_view(['POST'])
-def handle_equipment(request):
-    permission_classes = [IsAuthenticated]
-    try:
-        if isinstance(request.data, dict):
-            data = request.data
-        else:
-            try:
-                data = json.loads(request.body.decode('utf-8'))
-            except UnicodeDecodeError:
-                data = json.loads(request.body.decode('cp1251'))
-        
-        action = data.get('action')
-        equipment_data = data.get('equipment')
-
-        if not action or not equipment_data:
-            return Response(
-                {"error": "Некорректный запрос: отсутствует action или equipment"},
-                status=status.HTTP_400_BAD_REQUEST
-            )
-        if action == "insert":
-            return add_equipment(equipment_data)
-        elif action == "update":
-            return update_equipment(equipment_data)
-        elif action == "delete":
-            return delete_equipment(equipment_data)
-        else:
-            return Response(
-                {"error": "Неизвестное действие"},
-                status=status.HTTP_400_BAD_REQUEST
-            )
-
-    except json.JSONDecodeError:
-        return Response(
-            {"error": "Неверный формат JSON"},
-            status=status.HTTP_400_BAD_REQUEST
-        )
-    except Exception as e:
-        return Response(
-            {"error": str(e)},
-            status=status.HTTP_500_INTERNAL_SERVER_ERROR
-        )
-
-def add_equipment(data):
-    serializer = EquipmentSerializer(data=data)
-    if serializer.is_valid():
-        serializer.save()
-        return Response(
-            {"message": "Оборудование добавлено", "data": serializer.data},
-            status=status.HTTP_201_CREATED
-        )
-    return Response(
-        serializer.errors,
-        status=status.HTTP_400_BAD_REQUEST
-    )
-
-def update_equipment(data):
-    try:
-        equipment = Equipment.objects.get(inventory_number=data['inventory_number'])
-        serializer = EquipmentSerializer(equipment, data=data, partial=True)
-        if serializer.is_valid():
-            serializer.save()
-            return Response(
-                {"message": "Оборудование обновлено", "data": serializer.data},
-                status=status.HTTP_200_OK
-            )
-        return Response(
-            serializer.errors,
-            status=status.HTTP_400_BAD_REQUEST
-        )
-    except Equipment.DoesNotExist:
-        return Response(
-            {"error": "Оборудование не найдено"},
-            status=status.HTTP_404_NOT_FOUND
-        )
-
-def delete_equipment(data):
-    try:
-        equipment = Equipment.objects.get(inventory_number=data['inventory_number'])
-        equipment.delete()
-        return Response(
-            {"message": "Оборудование удалено"},
-            status=status.HTTP_200_OK
-        )
-    except Equipment.DoesNotExist:
-        return Response(
-            {"error": "Оборудование не найдено"},
-            status=status.HTTP_404_NOT_FOUND
-        )
-
-class EquipmentListAPIView(generics.ListAPIView):
-    permission_classes = [IsAuthenticated]  
-    queryset = Equipment.objects.all()
-    serializer_class = EquipmentSerializer
-
-    # Подключаем оба фильтрующих бэкенда:
-    filter_backends = [DjangoFilterBackend, filters.SearchFilter]
-
-    # Фильтрация по точному совпадению:
-    filterset_fields = ['equipment_manager', 'commissioning_date', 'default_location'] 
-    # Общий поиск по текстовым полям (по параметру ?search=...):
-    search_fields = ['article', 'inventory_number', 'name']
+    # Фильтрация через django‑filters и DRF SearchFilter
+    filter_backends = [
+        DjangoFilterBackend,       # точная фильтрация по полям ниже
+        filters.SearchFilter       # поиск по тексту
+    ]
+    filterset_fields = {
+        'equipment_manager': ['exact', 'icontains'],
+        'commissioning_date': ['exact'],
+        'default_location': ['exact'],
+    }
+    search_fields = [
+        'article',
+        'inventory_number',
+        'name',
+    ]
 
     def get_queryset(self):
-        queryset = super().get_queryset()
-
-        # Получаем параметр show_salvaged из строки запроса (по умолчанию пустая строка)
+        """
+        Добавляем доп. условие:
+        если в query string нет show_salvaged=true,
+        то отбрасываем объекты со status_id=4.
+        """
+        qs = super().get_queryset()
         show_salvaged = self.request.query_params.get('show_salvaged', '').lower()
-        # иначе
+
         if show_salvaged != 'true':
-            queryset = queryset.exclude(status_id=4)
+            qs = qs.exclude(status_id=4)
+        return qs
 
 
-        return queryset
+class EquipmentRetrieveUpdateDestroyAPIView(generics.RetrieveUpdateDestroyAPIView):
+    """
+    API‑ручка по path /equipment/<pk>/:
+      • GET    — получить детали
+      • PATCH  — частичное обновление
+      • DELETE — пометить статус как списанное (status_id=4)
+    """
+    # Какие объекты и как сериализовать
+    queryset         = Equipment.objects.all()
+    serializer_class = EquipmentSerializer
+
+    def destroy(self, request, *args, **kwargs):
+        """
+        Вместо физического удаления помечаем статус как "списано" (status_id=4).
+        """
+        instance = self.get_object()
+        instance.status_id = 4
+        instance.save()
+
+        # Сериализуем обновлённый объект и возвращаем клиенту
+        serializer = self.get_serializer(instance)
+        return Response(
+            {"success": True, "data": serializer.data},
+            status=status.HTTP_200_OK
+        )
