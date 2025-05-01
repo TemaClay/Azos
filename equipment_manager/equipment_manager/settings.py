@@ -41,7 +41,8 @@ INSTALLED_APPS = [
     'rest_framework',
     'rest_framework_simplejwt',
     'equipment.apps.EquipmentConfig',
-    'django_filters' ## для фильтрации оборудования
+    'django_filters', ## для фильтрации оборудования
+    'corsheaders'
 ]
 
 MIDDLEWARE = [
@@ -52,6 +53,7 @@ MIDDLEWARE = [
     'django.contrib.auth.middleware.AuthenticationMiddleware',
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
+    'corsheaders.middleware.CorsMiddleware',
 ]
 
 ROOT_URLCONF = 'equipment_manager.urls'
@@ -73,6 +75,11 @@ TEMPLATES = [
 ]
 
 WSGI_APPLICATION = 'equipment_manager.wsgi.application'
+
+# settings.py в Django
+CORS_ALLOWED_ORIGINS = [
+    "http://localhost:3000",  # адрес фронта на Next.js
+]
 
 
 # Database
