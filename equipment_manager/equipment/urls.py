@@ -9,6 +9,7 @@ from equipment.views import (
     EquipmentListView,
     EquipmentListCreateAPIView,
     EquipmentRetrieveUpdateDestroyAPIView,
+    PlaceListCreateAPIView
 )
 
 urlpatterns = [
@@ -30,6 +31,11 @@ urlpatterns = [
     # POST /api/equipment/       — создать новый объект
     path('api/equipment/', EquipmentListCreateAPIView.as_view(), name='equipment-list-create'),
 
+    # REST API
+    # GET  /api/place/       — список (+фильтрация/поиск)
+    # POST /api/place/       — создать новый объект
+    path('api/place/', PlaceListCreateAPIView.as_view(), name='place-list-create'),
+    
     # GET    /api/equipment/<pk>/   — детали
     # PATCH  /api/equipment/<pk>/   — частичное обновление
     # DELETE /api/equipment/<pk>/   — «списать» (перевести в status_id=4)

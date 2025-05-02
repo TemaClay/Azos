@@ -20,8 +20,8 @@ from rest_framework.response import Response
 # —————————————————————————————————————————
 # 4) Локальные модели и сериализаторы
 # —————————————————————————————————————————
-from .models import Equipment
-from .serializers import EquipmentSerializer
+from .models import Equipment, Place
+from .serializers import EquipmentSerializer, PlaceSerializer
 
 
 class EquipmentListView(ListView):
@@ -74,6 +74,29 @@ class EquipmentListCreateAPIView(generics.ListCreateAPIView):
             qs = qs.exclude(status_id=4)
         return qs
 
+class PlaceListCreateAPIView(generics.ListCreateAPIView):
+    """
+    API‑ручка:
+      • GET  /place/     — список с фильтрацией и поиском
+      • POST /place/     — создание нового объекта
+    """
+    # Базовый набор полей
+    queryset = Place.objects.all()
+    serializer_class = PlaceSerializer
+
+
+    # Фильтрация через django‑filters и DRF SearchFilter
+    filter_backends = [
+        DjangoFilterBackend,       # точная фильтрация по полям ниже
+        filters.SearchFilter       # поиск по тексту
+    ]
+    filterset_fields = {
+        'name': ['exact', 'icontains']
+    }
+    search_fields = [
+        'name'
+    ]
+    
 
 class EquipmentRetrieveUpdateDestroyAPIView(generics.RetrieveUpdateDestroyAPIView):
     """
