@@ -12,8 +12,18 @@ interface Equipment {
   commissioning_date: string;
   equipment_manager: string;
   location: string;
-  default_location: number;
-  status: number;
+  default_location: Place;
+  status: Status;
+}
+
+interface Place {
+  id: number;
+  name: string;
+}
+
+interface Status {
+  id: number;
+  name_of_status: string;
 }
 
 export default function EquipmentListPage() {
@@ -27,13 +37,14 @@ export default function EquipmentListPage() {
       try {
         // Основной запрос на получение полного списка оборудования
         const res = await fetch('/api/equipment', {
-          cache: 'force-cache',    // Использовать кэш браузера
+          cache: 'no-cache',    // Использовать кэш браузера
           next: { revalidate: 100 } // Фоновая ревалидация через 100 сек
         });
 
         const data: Equipment[] = await res.json();
         setList(data); // Обновление локального состояния для рендеринга
-
+        
+        console.log('equipment list', data);
         /**
          * Кэшируем полный список оборудования.
          * mutate с флагом false - обновление кэша без повторной валидации.
@@ -85,7 +96,7 @@ export default function EquipmentListPage() {
           <th>Название</th>
           <th>Дата ввода</th>
           <th>Ответственный</th>
-          <th>Локация</th>
+          <th>Текущая Локация</th>
           <th>Статус</th>
         </tr>
       </thead>
@@ -102,7 +113,7 @@ export default function EquipmentListPage() {
             <td>{item.commissioning_date}</td>
             <td>{item.equipment_manager}</td>
             <td>{item.location}</td>
-            <td>{item.status}</td>
+            <td>{item.status.name_of_status}</td>
           </tr>
         ))}
       </tbody>

@@ -13,8 +13,18 @@ interface EquipmentDetail {
   commissioning_date: string;
   equipment_manager: string;
   location: string;
-  default_location: number;
-  status: number;
+  default_location: Place;
+  status: Status;
+}
+
+interface Place {
+  id: number;
+  name: string;
+}
+
+interface Status {
+  id: number;
+  name_of_status: string;
 }
 
 /**
@@ -67,8 +77,8 @@ export default function EquipmentDetailPage() {
         Ответственный: {item.equipment_manager} &nbsp;&nbsp;
         Дата ввода: {item.commissioning_date} &nbsp;&nbsp;
         Местоположение: {item.location} &nbsp;&nbsp;
-        Локация по умолчанию: {item.default_location} &nbsp;&nbsp;
-        Статус: {['Неактивно', 'В работе'][item.status] || 'Неизвестно'}
+        Локация по умолчанию: {item.default_location.name} &nbsp;&nbsp;
+        Статус: {item.status.name_of_status}
       </p>
     </div>
   );
