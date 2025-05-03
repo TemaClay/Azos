@@ -64,7 +64,7 @@ class EquipmentSerializer(serializers.ModelSerializer):
             'name',
             'commissioning_date',
             'equipment_manager',
-
+            'location',
             # поля для записи/чтения связей
             'default_location_id',   # write-only для фронтенда: указать ID места при POST/PATCH
             'default_location',      # read-only для фронтенда: получить объект Place в ответе
