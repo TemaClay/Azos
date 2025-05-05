@@ -9,7 +9,8 @@ from equipment.views import (
     EquipmentListView,
     EquipmentListCreateAPIView,
     EquipmentRetrieveUpdateDestroyAPIView,
-    PlaceListCreateAPIView
+    PlaceListCreateAPIView,
+    StatusViewSet
 )
 
 urlpatterns = [
@@ -40,6 +41,9 @@ urlpatterns = [
     # PATCH  /api/equipment/<pk>/   — частичное обновление
     # DELETE /api/equipment/<pk>/   — «списать» (перевести в status_id=4)
     path('api/equipment/<int:pk>/', EquipmentRetrieveUpdateDestroyAPIView.as_view(), name='equipment-detail'),
+
+
+    path('api/status/', StatusViewSet.as_view(), name='status-list-create'),
 ]
 
 # Для обслуживания медиа-файлов (если нужно)

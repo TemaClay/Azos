@@ -20,8 +20,8 @@ from rest_framework.response import Response
 # —————————————————————————————————————————
 # 4) Локальные модели и сериализаторы
 # —————————————————————————————————————————
-from .models import Equipment, Place
-from .serializers import EquipmentSerializer, PlaceSerializer
+from .models import Equipment, Place, Status
+from .serializers import EquipmentSerializer, PlaceSerializer, StatusSerializer
 
 
 class EquipmentListView(ListView):
@@ -54,12 +54,15 @@ class EquipmentListCreateAPIView(generics.ListCreateAPIView):
         'equipment_manager': ['exact', 'icontains'],
         'commissioning_date': ['exact'],
         'default_location': ['exact'],
+        'status_id': ['exact'],
     }
     search_fields = [
         'article',
         'inventory_number',
         'name',
     ]
+
+    #узнать можно ли изменить get_queryset, чтобы всё корректно отрабатывало
 
     def get_queryset(self):
         """
@@ -73,6 +76,7 @@ class EquipmentListCreateAPIView(generics.ListCreateAPIView):
         if show_salvaged != 'true':
             qs = qs.exclude(status_id=4)
         return qs
+
 
 class PlaceListCreateAPIView(generics.ListCreateAPIView):
     """
@@ -123,3 +127,29 @@ class EquipmentRetrieveUpdateDestroyAPIView(generics.RetrieveUpdateDestroyAPIVie
             {"success": True, "data": serializer.data},
             status=status.HTTP_200_OK
         )
+
+
+
+
+class StatusViewSet(generics.ListCreateAPIView):
+    """
+    API‑ручка:
+      • GET  /place/     — список с фильтрацией и поиском
+      • POST /place/     — создание нового объекта
+    """
+    # Базовый набор полей
+    queryset = Status.objects.all()
+    serializer_class = StatusSerializer 
+
+
+    # Фильтрация через django‑filters и DRF SearchFilter
+    filter_backends = [
+        DjangoFilterBackend,       # точная фильтрация по полям ниже
+        filters.SearchFilter       # поиск по тексту
+    ]
+    filterset_fields = {
+        'name_of_status': ['exact', 'icontains']
+    }
+    search_fields = [
+        'name_of_status'
+    ]

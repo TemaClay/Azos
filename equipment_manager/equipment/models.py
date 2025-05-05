@@ -7,7 +7,7 @@ class Place(models.Model):
         db_table = 'Places'  # Явное указание имени таблицы
 
 class Status(models.Model):
-    name_of_status = models.CharField(max_length=255)
+    name_of_status = models.CharField(max_length=255, unique=True)
     
     class Meta:
         db_table = 'Status'

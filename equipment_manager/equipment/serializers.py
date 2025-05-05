@@ -19,7 +19,7 @@ class StatusSerializer(serializers.ModelSerializer):
     class Meta:
         model = Status
         # поле в модели Status называется, например, Name_of_status
-        fields = ('id', 'name_of_status')
+        fields = ['id', 'name_of_status']
 
 
 class EquipmentSerializer(serializers.ModelSerializer):
