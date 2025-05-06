@@ -2,7 +2,8 @@
 
 import React, { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { useSWRConfig } from 'swr';
+import useSWR, { useSWRConfig } from 'swr';
+import { fetcher } from '@/lib/fetcher';
 
 interface Equipment {
   id: number;
@@ -28,58 +29,18 @@ interface Status {
 
 export default function EquipmentListPage() {
   const router = useRouter();         // Хук для программной навигации
-  const { cache, mutate } = useSWRConfig(); // Инструменты управления SWR-кэшем
-  const [list, setList] = useState<Equipment[] | null>(null); // Локальное состояние списка
-  const [error, setError] = useState<string | null>(null);    // Состояние ошибки
 
-  useEffect(() => {
-    const loadData = async () => {
-      try {
-        // Основной запрос на получение полного списка оборудования
-        const res = await fetch('/api/equipment', {
-          cache: 'no-cache',    // Использовать кэш браузера
-          next: { revalidate: 100 } // Фоновая ревалидация через 100 сек
-        });
 
-        const data: Equipment[] = await res.json();
-        setList(data); // Обновление локального состояния для рендеринга
-        
-        console.log('equipment list', data);
-        /**
-         * Кэшируем полный список оборудования.
-         * mutate с флагом false - обновление кэша без повторной валидации.
-         * Это позволяет последующим запросам к /api/equipment использовать кэшированные данные.
-         */
-        mutate('/api/equipment', data, false);
-
-        /**
-         * Инкрементальное кэширование элементов:
-         * - Итерируем по полученному списку
-         * - Для каждого элемента создаем ключ вида /api/equipment/[id]
-         * - Сохраняем в кэш ТОЛЬКО если элемент отсутствует
-         * 
-         * Эффект для подстраниц:
-         * При переходе на /equipment/[id] SWR автоматически проверит кэш:
-         * 1. Если данные есть - мгновенно отобразит их
-         * 2. Если нет - выполнит запрос к /api/equipment/[id]
-         * 
-         * Таким образом, первый запрос к списку предзагружает данные
-         * для ВСЕХ возможных подстраниц, уменьшая нагрузку на бэкенд.
-         */
-        data.forEach((item) => {
-          const key = `/api/equipment/${item.id}`;
-          if (!cache.get(key)) {
-            mutate(key, item, false);
-          }
-        });
-
-      } catch (err: any) {
-        setError(err.message || 'Ошибка загрузки данных');
+  const { data: list, error } = useSWR<Equipment[]>(
+      '/api/equipment',
+      fetcher,
+      {
+        revalidateOnFocus: false,
+        dedupingInterval: 60_000,
       }
-    };
-
-    loadData();
-  }, [mutate, cache]); // Зависимости гарантируют актуальность кэша
+    );
+    const { mutate } = useSWRConfig();
+  
 
   // Состояние загрузки
   if (!list) return <p>Идет загрузка данных...</p>;
