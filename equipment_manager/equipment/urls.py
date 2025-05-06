@@ -14,8 +14,6 @@ from equipment.views import (
 )
 
 urlpatterns = [
-    # Админка
-    path('admin/', admin.site.urls),
 
     # Стандартный вход/выход Django
     path('accounts/', include('django.contrib.auth.urls')),

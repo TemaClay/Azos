@@ -3,13 +3,37 @@ import requests
 from PyQt5.QtWidgets import (
     QApplication, QWidget, QVBoxLayout, QPushButton,
     QTableWidget, QTableWidgetItem, QMessageBox, QHBoxLayout,
-    QLineEdit, QLabel, QCheckBox, QTabWidget, QDialog, QFormLayout, QComboBox
+    QLineEdit, QLabel, QCheckBox, QTabWidget, QDialog, QFormLayout, QComboBox, QStyledItemDelegate
 )
 
 from urllib.parse import urlencode
 
 API_URL = 'http://127.0.0.1:8000/api/equipment/'
 TOKEN_URL = 'http://127.0.0.1:8000/token/'
+
+
+
+class ComboBoxDelegate(QStyledItemDelegate):
+    def __init__(self, items_dict, parent=None):
+        super().__init__(parent)
+        self.items_dict = items_dict  # {"Название": id}
+
+    def createEditor(self, parent, option, index):
+        editor = QComboBox(parent)
+        editor.addItems(list(self.items_dict.keys()))
+        return editor
+
+    def setEditorData(self, editor, index):
+        value = index.data()
+        i = editor.findText(value)
+        if i >= 0:
+            editor.setCurrentIndex(i)
+
+    def setModelData(self, editor, model, index):
+        value = editor.currentText()
+        model.setData(index, value)
+
+
 
 class LoginDialog(QDialog):
     def __init__(self):
@@ -32,6 +56,8 @@ class LoginDialog(QDialog):
 
         self.token = None
 
+        
+
     def try_login(self):
         username = self.username_input.text()
         password = self.password_input.text()
@@ -53,7 +79,10 @@ class EquipmentTab(QWidget):
     def __init__(self, parent):
         super().__init__()
         self.parent = parent
+        self.status_dict = {}
+        self.location_dict = {}
         self.init_ui()
+        
 
     def init_ui(self):
         layout = QVBoxLayout()
@@ -115,6 +144,7 @@ class EquipmentTab(QWidget):
         layout.addLayout(button_layout)
 
         self.setLayout(layout)
+        
 
 
     def save_changes(self):
@@ -171,7 +201,7 @@ class EquipmentTab(QWidget):
                         if header == "status":
                             # Парсим ID статуса из текста (формат "Название (ID)")
                             try:
-                                status_id = int(new_value.split("(")[-1].replace(")", ""))
+                                status_id = self.status_dict.get(new_value)
                                 payload["status_id"] = status_id
                             except:
                                 
@@ -179,7 +209,7 @@ class EquipmentTab(QWidget):
                         elif header == "default_location":
                             # Аналогично для локации
                             try:
-                                loc_id = int(new_value.split("(")[-1].replace(")", ""))
+                                loc_id = self.location_dict.get(new_value)
                                 payload["default_location_id"] = loc_id
                             except:
                                 
@@ -254,15 +284,16 @@ class EquipmentTab(QWidget):
 
 
     def load_statuses(self):
-        """Загрузка списка статусов оборудования из API"""
         headers = {'Authorization': f'Bearer {self.parent.access_token}'}
         try:
             response = requests.get('http://127.0.0.1:8000/api/status/', headers=headers)
             response.raise_for_status()
             statuses = response.json()
+            self.status_dict.clear()
             for status in statuses:
                 name = status.get("name_of_status")
                 status_id = status.get("id")
+                self.status_dict[name] = status_id
                 self.status_input.addItem(name, userData=status_id)
         except requests.RequestException as e:
             QMessageBox.critical(self, "Ошибка загрузки статусов", str(e))
@@ -313,24 +344,50 @@ class EquipmentTab(QWidget):
             self.table.setColumnCount(0)
             return
 
+        # Отображаемые заголовки
+        header_map = {
+            "id": "id",
+            "article": "Артикул",
+            "inventory_number": "Инвентарный номер",
+            "name": "Название",
+            "default_location": "Базовая локация",
+            "status": "Статус",
+            "commissioning_date": "Дата ввода в эксплуатацию",
+            "location": "Текущая локация",
+            "equipment_manager": "Ответственный",
+            # добавьте другие поля по необходимости
+        }
+
         headers = list(data[0].keys())
         self.table.setColumnCount(len(headers))
-        self.table.setHorizontalHeaderLabels(headers)
+        display_headers = [header_map.get(h, h) for h in headers]
+        self.table.setHorizontalHeaderLabels(display_headers)
         self.table.setRowCount(len(data))
 
         for row_idx, item in enumerate(data):
             for col_idx, key in enumerate(headers):
                 value = item.get(key, "")
-                # Обработка вложенных словарей, например status
                 if isinstance(value, dict):
                     if key == 'status' and 'name_of_status' in value:
                         value = value['name_of_status']
+                    elif key == 'default_location' and 'name' in value:
+                        value = value['name']
                     else:
                         value = str(value)
                 else:
                     value = str(value)
                 self.table.setItem(row_idx, col_idx, QTableWidgetItem(value))
-    
+
+        # Установка делегатов — должно быть после headers
+        for col_idx, key in enumerate(headers):
+            if key == "status":
+                self.table.setItemDelegateForColumn(col_idx, ComboBoxDelegate(self.status_dict, self.table))
+            elif key == "default_location":
+                self.table.setItemDelegateForColumn(col_idx, ComboBoxDelegate(self.location_dict, self.table))
+
+        self.table.resizeColumnsToContents()
+
+        
 
     def load_locations(self):
         headers = {'Authorization': f'Bearer {self.parent.access_token}'}
@@ -338,9 +395,11 @@ class EquipmentTab(QWidget):
             response = requests.get('http://127.0.0.1:8000/api/place/', headers=headers)
             response.raise_for_status()
             locations = response.json()
+            self.location_dict.clear()
             for loc in locations:
                 name = loc.get("name")
                 loc_id = loc.get("id")
+                self.location_dict[name] = loc_id
                 self.location_input.addItem(name, userData=loc_id)
         except requests.RequestException as e:
             QMessageBox.critical(self, "Ошибка загрузки локаций", str(e))
@@ -483,7 +542,10 @@ class AddEquipmentTab(QWidget):
             self.default_location_combo, self.status_combo,
             self.commissioning_date_input, self.location_input, self.manager_input
         ]:
-            field.clear()
+            if isinstance(field, QLineEdit):
+                field.clear()
+            elif isinstance(field, QComboBox):
+                field.setCurrentIndex(0)
 
 
 
@@ -500,19 +562,24 @@ class EquipmentApp(QWidget):
         self.setGeometry(100, 100, 1200, 700)
 
         layout = QVBoxLayout()
-        tabs = QTabWidget()
+
+        self.tabs = QTabWidget()  # ← создаем self.tabs, а не tabs
 
         self.equipment_tab = EquipmentTab(self)
-        self.add_tab = AddEquipmentTab(self)
+        self.equipment_tab.load_equipment()
+        self.add_equipment_tab = AddEquipmentTab(self)
         self.settings_tab = QLabel("Здесь будут настройки")
 
-        tabs.addTab(self.equipment_tab, "Список оборудования")
-        tabs.addTab(self.add_tab, "Добавить оборудование")
-        tabs.addTab(self.settings_tab, "Настройки")
+        self.tabs.addTab(self.equipment_tab, "Список оборудования")
+        self.tabs.addTab(self.add_equipment_tab, "Добавить оборудование")
+        self.tabs.addTab(self.settings_tab, "Настройки")
 
-        layout.addWidget(tabs)
+        self.tabs.currentChanged.connect(self.on_tab_changed)
+
+        layout.addWidget(self.tabs)
         self.setLayout(layout)
 
+        # Верхняя панель с кнопкой выхода
         top_bar = QHBoxLayout()
         top_bar.addStretch()
 
@@ -535,12 +602,21 @@ class EquipmentApp(QWidget):
 
         top_bar.addWidget(logout_btn)
         layout.addLayout(top_bar)
+
         
 
 
     def logout(self):
         self.close()
         main()
+
+
+    def on_tab_changed(self, index):
+        current_widget = self.tabs.widget(index)
+        if isinstance(current_widget, EquipmentTab):
+            current_widget.load_equipment()
+        elif isinstance(current_widget, AddEquipmentTab):
+            current_widget.load_combobox_data()
 
 
 def main():
