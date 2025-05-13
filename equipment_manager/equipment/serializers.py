@@ -1,5 +1,5 @@
 from rest_framework import serializers
-from .models import Equipment, Place, Status
+from .models import Equipment, Place, Status, Log
 
 class PlaceSerializer(serializers.ModelSerializer):
     """
@@ -70,4 +70,18 @@ class EquipmentSerializer(serializers.ModelSerializer):
             'default_location',      # read-only для фронтенда: получить объект Place в ответе
             'status_id',             # write-only для фронтенда: указать ID статуса при POST/PATCH
             'status',                # read-only для фронтенда: получить объект Status в ответе
+        ]
+
+
+class LogSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Log
+        fields = [
+            "id",
+            "equipment",
+            "destination",
+            'start_date_of_using',
+            'application_number',
+            'end_date_of_using',
+            'name_of_receiver'
         ]

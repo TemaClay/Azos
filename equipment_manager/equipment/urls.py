@@ -10,7 +10,8 @@ from equipment.views import (
     EquipmentListCreateAPIView,
     EquipmentRetrieveUpdateDestroyAPIView,
     PlaceListCreateAPIView,
-    StatusViewSet
+    StatusViewSet,
+    LogViewSet
 )
 
 urlpatterns = [
@@ -40,8 +41,19 @@ urlpatterns = [
     # DELETE /api/equipment/<pk>/   — «списать» (перевести в status_id=4)
     path('api/equipment/<int:pk>/', EquipmentRetrieveUpdateDestroyAPIView.as_view(), name='equipment-detail'),
 
-
+    # GET  /api/status/       — список (+фильтрация/поиск)
+    # POST /api/status/       — создать новый объект
     path('api/status/', StatusViewSet.as_view(), name='status-list-create'),
+
+
+    # GET  /api/log/       — список (+фильтрация/поиск)
+    # POST /api/log/       — создать новый объект
+    path('api/log/', LogViewSet.as_view({'get': 'list', 'post': 'create',}), name='log-list'),
+
+
+    # GET    /api/log/<pk>/   — детали
+    # PATCH  /api/log/<pk>/   — частичное обновление
+    path('api/log/<pk>/', LogViewSet.as_view({'get': 'retrieve', 'patch': 'partial_update',}), name="log-detail")
 ]
 
 # Для обслуживания медиа-файлов (если нужно)

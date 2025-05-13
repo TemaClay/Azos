@@ -3,8 +3,9 @@ import requests
 from PyQt5.QtWidgets import (
     QApplication, QWidget, QVBoxLayout, QPushButton,
     QTableWidget, QTableWidgetItem, QMessageBox, QHBoxLayout,
-    QLineEdit, QLabel, QCheckBox, QTabWidget, QDialog, QFormLayout, QComboBox, QStyledItemDelegate
+    QLineEdit, QLabel, QCheckBox, QTabWidget, QDialog, QFormLayout, QComboBox, QStyledItemDelegate, QDateEdit  
 )
+from PyQt5.QtCore import QDate
 
 from urllib.parse import urlencode
 
@@ -73,6 +74,237 @@ class LoginDialog(QDialog):
             self.accept()  # Закрыть диалог с успехом
         except requests.exceptions.RequestException:
             QMessageBox.critical(self, "Ошибка входа", "Неверный логин или пароль")
+
+
+
+class SendEquipmentTab(QWidget):
+    def __init__(self, parent):
+        super().__init__()
+        self.parent = parent
+        self.initUI()
+
+    def initUI(self):
+        layout = QFormLayout()
+
+        self.equipment_input = QComboBox()
+        self.equipment_dict = {}
+        self.destination = QLineEdit()
+        self.start_date = QDateEdit(calendarPopup=True)
+        self.start_date.setDate(QDate.currentDate())
+
+        self.application_number = QLineEdit()
+        self.end_date = QDateEdit(calendarPopup=True)
+        self.end_date.setDate(QDate.currentDate())
+
+        self.receiver = QLineEdit()
+
+        layout.addRow("Оборудование", self.equipment_input)
+        layout.addRow("Место назначения", self.destination)
+        layout.addRow("Дата начала", self.start_date)
+        layout.addRow("Номер заявки", self.application_number)
+        layout.addRow("Дата окончания", self.end_date)
+        layout.addRow("Ответственный", self.receiver)
+
+        self.load_equipment()
+
+
+        send_button = QPushButton("Отправить")
+        send_button.clicked.connect(self.send_equipment)
+        layout.addWidget(send_button)
+
+        self.setLayout(layout)
+
+
+    def load_equipment(self):
+        headers = {'Authorization': f'Bearer {self.parent.access_token}'}
+        try:
+            # Получаем список оборудования с сервера
+            response = requests.get('http://127.0.0.1:8000/api/equipment/', headers=headers)
+            response.raise_for_status()
+            equipment_list = response.json()
+
+            # Очищаем текущий список в QComboBox
+            self.equipment_input.clear()
+            self.equipment_dict = {}
+
+            # Проходим по списку и добавляем в QComboBox только доступное оборудование
+            for eq in equipment_list:
+                status = eq.get("status", {}).get("id")
+                if status == 1:  # Только оборудование с доступным статусом (status_id = 1)
+                    name = eq.get("name")
+                    eq_id = eq.get("id")
+                    display_name = f"{eq.get('inventory_number', '')} — {name}"
+                    self.equipment_input.addItem(display_name, userData=eq_id)
+                    self.equipment_dict[display_name] = eq_id
+        except requests.RequestException as e:
+            # Ошибка загрузки данных
+            QMessageBox.critical(self, "Ошибка загрузки оборудования", str(e))
+
+
+
+    def send_equipment(self):
+        url = "http://localhost:8000/api/log/"
+        headers = {
+            'Authorization': f'Bearer {self.parent.access_token}',
+            'Content-Type': 'application/json'
+        }
+        data = {
+            "equipment": self.equipment_input.currentData(),  # Получаем ID оборудования
+            "destination": self.destination.text(),
+            "start_date_of_using": self.start_date.date().toString("yyyy-MM-dd"),
+            "application_number": self.application_number.text(),
+            "end_date_of_using": self.end_date.date().toString("yyyy-MM-dd"),
+            "name_of_receiver": self.receiver.text()
+        }
+
+        try:
+            # Отправка данных на сервер
+            response = requests.post(url, headers=headers, json=data)
+            response.raise_for_status()  # Если статус код не 200, выбрасывается исключение
+
+            # Оповещение об успешной отправке
+            QMessageBox.information(self, "Успех", "Оборудование успешно добавлено в журнал перемещений.")
+
+            # Очистка полей
+            self.clear_fields()
+
+            # Перезагружаем оборудование после отправки
+            self.load_equipment()  # Обновление списка оборудования, чтобы оно исчезло из списка.
+
+        except requests.exceptions.RequestException as e:
+            # Обработка ошибок при отправке
+            if response is not None and response.content:
+                try:
+                    error_message = response.json()
+                except Exception:
+                    error_message = response.text
+            else:
+                error_message = str(e)
+
+            # Оповещение об ошибке
+            QMessageBox.warning(self, "Ошибка", f"Ошибка добавления:\n{error_message}")
+
+
+
+    def clear_fields(self):
+        self.equipment_input.setCurrentIndex(0)
+        self.destination.clear()
+        self.start_date.setDate(QDate.currentDate())
+        self.application_number.clear()
+        self.end_date.setDate(QDate.currentDate())
+        self.receiver.clear()
+
+
+
+
+
+class ReturnEquipmentTab(QWidget):
+    def __init__(self, parent):
+        super().__init__()
+        self.parent = parent
+        self.initUI()
+
+    def initUI(self):
+        layout = QFormLayout()
+
+        # Создаем выпадающий список для выбора оборудования
+        self.return_equipment_input = QComboBox()
+
+        # Загружаем оборудование для возврата
+        self.load_equipment_for_return()
+
+        # Кнопка для возврата оборудования
+        return_button = QPushButton("Принять оборудование")
+        return_button.clicked.connect(self.return_equipment)
+
+        # Добавляем виджеты на форму
+        layout.addRow("Оборудование для возврата", self.return_equipment_input)
+        layout.addWidget(return_button)
+
+        self.setLayout(layout)
+
+    def load_equipment_for_return(self):
+        # Загружаем список оборудования с API
+        headers = {'Authorization': f'Bearer {self.parent.access_token}'}
+        try:
+            response = requests.get('http://127.0.0.1:8000/api/equipment/', headers=headers)
+            response.raise_for_status()
+            equipment_list = response.json()
+
+            # Очищаем старые данные
+            self.return_equipment_input.clear()
+            self.return_equipment_dict = {}
+
+            # Загружаем оборудование с нужным статусом
+            for eq in equipment_list:
+                status_id = eq.get("status", {}).get("id")
+                if status_id in [2, 3]:  # фильтруем оборудование со статусами 2 и 3
+                    name = eq.get("name")
+                    eq_id = eq.get("id")
+                    self.return_equipment_input.addItem(f"{name} (Инв. номер: {eq.get('inventory_number')})", userData=eq_id)
+                    self.return_equipment_dict[name] = eq_id
+        except requests.RequestException as e:
+            QMessageBox.critical(self, "Ошибка загрузки оборудования для возврата", str(e))
+
+    def return_equipment(self):
+        # Получаем ID выбранного оборудования
+        selected_equipment_id = self.return_equipment_input.currentData()
+        # Получаем все логи для этого оборудования через API
+        headers = {'Authorization': f'Bearer {self.parent.access_token}'}
+        try:
+            # Запрос на получение всех логов для оборудования
+            response = requests.get(f'http://127.0.0.1:8000/api/log/', headers=headers)
+            response.raise_for_status()
+            logs = response.json()
+
+            # Находим последний лог для выбранного оборудования
+            latest_log = None
+            for log in logs:
+                if log['equipment'] == selected_equipment_id:
+                    if latest_log is None or log['start_date_of_using'] > latest_log['start_date_of_using']:
+                        latest_log = log
+
+            if latest_log is None:
+                # Если нет записей в журнале для этого оборудования
+                QMessageBox.warning(self, "Ошибка", "Для этого оборудования нет записей.")
+                return
+
+            # Обновляем статус оборудования через API
+            update_data = {
+                'status_id': 1  # Статус "возвращено"
+            }
+            equipment_update_response = requests.patch(
+                f'http://127.0.0.1:8000/api/equipment/{selected_equipment_id}/', 
+                json=update_data, 
+                headers=headers
+            )
+            equipment_update_response.raise_for_status()
+
+            # Обновляем дату окончания использования в log через API
+            log_update_data = {
+                'end_date_of_using': QDate.currentDate().toString("yyyy-MM-dd")
+            }
+            log_update_response = requests.patch(
+                f'http://127.0.0.1:8000/api/log/{latest_log["id"]}/',
+                json=log_update_data,
+                headers=headers
+            )
+            log_update_response.raise_for_status()
+
+            QMessageBox.information(self, "Успех", "Оборудование возвращено.")
+
+            # Перезагружаем список оборудования для возврата, чтобы обновить его и исключить возвращенное оборудование
+            self.load_equipment_for_return()
+
+        except requests.RequestException as e:
+            QMessageBox.critical(self, "Ошибка возврата оборудования", str(e))
+
+
+
+
+
+
+
 
 
 class EquipmentTab(QWidget):
@@ -188,34 +420,31 @@ class EquipmentTab(QWidget):
             # Обновляем только измененные поля
             payload = {}
             for col in range(1, self.table.columnCount()):
-                header = self.table.horizontalHeaderItem(col).text()
+                key = self.raw_headers[col]  # ключ из API, а не заголовок таблицы
                 item = self.table.item(row, col)
-                
+
                 if item is not None:
                     new_value = item.text()
-                    current_value = str(equipment_data.get(header, ""))
-                    
-                    # Если значение изменилось
-                    if new_value != current_value:
-                        # Особые случаи для полей-объектов
-                        if header == "status":
-                            # Парсим ID статуса из текста (формат "Название (ID)")
-                            try:
-                                status_id = self.status_dict.get(new_value)
+
+                    if key == "status":
+                        old_value = equipment_data.get("status", {}).get("name_of_status", "")
+                        if new_value != old_value:
+                            status_id = self.status_dict.get(new_value)
+                            if status_id:
                                 payload["status_id"] = status_id
-                            except:
-                                
-                                continue
-                        elif header == "default_location":
-                            # Аналогично для локации
-                            try:
-                                loc_id = self.location_dict.get(new_value)
+
+                    elif key == "default_location":
+                        old_value = equipment_data.get("default_location", {}).get("name", "")
+                        if new_value != old_value:
+                            loc_id = self.location_dict.get(new_value)
+                            if loc_id:
                                 payload["default_location_id"] = loc_id
-                            except:
-                                
-                                continue
-                        else:
-                            payload[header] = new_value
+
+                    else:
+                        current_value = str(equipment_data.get(key, ""))
+                        if new_value != current_value:
+                            payload[key] = new_value
+
 
             if not payload:
                 continue
@@ -289,12 +518,11 @@ class EquipmentTab(QWidget):
             response = requests.get('http://127.0.0.1:8000/api/status/', headers=headers)
             response.raise_for_status()
             statuses = response.json()
-            self.status_dict.clear()
             for status in statuses:
                 name = status.get("name_of_status")
                 status_id = status.get("id")
-                self.status_dict[name] = status_id
                 self.status_input.addItem(name, userData=status_id)
+                self.status_dict[name] = status_id  # сохраняем соответствие
         except requests.RequestException as e:
             QMessageBox.critical(self, "Ошибка загрузки статусов", str(e))
 
@@ -359,6 +587,7 @@ class EquipmentTab(QWidget):
         }
 
         headers = list(data[0].keys())
+        self.raw_headers = headers
         self.table.setColumnCount(len(headers))
         display_headers = [header_map.get(h, h) for h in headers]
         self.table.setHorizontalHeaderLabels(display_headers)
@@ -395,12 +624,11 @@ class EquipmentTab(QWidget):
             response = requests.get('http://127.0.0.1:8000/api/place/', headers=headers)
             response.raise_for_status()
             locations = response.json()
-            self.location_dict.clear()
             for loc in locations:
                 name = loc.get("name")
                 loc_id = loc.get("id")
-                self.location_dict[name] = loc_id
                 self.location_input.addItem(name, userData=loc_id)
+                self.location_dict[name] = loc_id  # сохраняем соответствие
         except requests.RequestException as e:
             QMessageBox.critical(self, "Ошибка загрузки локаций", str(e))
 
@@ -569,10 +797,12 @@ class EquipmentApp(QWidget):
         self.equipment_tab.load_equipment()
         self.add_equipment_tab = AddEquipmentTab(self)
         self.settings_tab = QLabel("Здесь будут настройки")
+        self.sendLogTab = SendEquipmentTab(self)
 
         self.tabs.addTab(self.equipment_tab, "Список оборудования")
         self.tabs.addTab(self.add_equipment_tab, "Добавить оборудование")
         self.tabs.addTab(self.settings_tab, "Настройки")
+        self.tabs.addTab(self.sendLogTab, "Отправка оборудования")
 
         self.tabs.currentChanged.connect(self.on_tab_changed)
 
@@ -602,6 +832,10 @@ class EquipmentApp(QWidget):
 
         top_bar.addWidget(logout_btn)
         layout.addLayout(top_bar)
+
+        self.return_tab = ReturnEquipmentTab(self)
+        self.tabs.addTab(self.return_tab, "Возврат оборудования")
+
 
         
 

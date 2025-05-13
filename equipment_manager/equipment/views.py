@@ -20,9 +20,11 @@ from rest_framework.response import Response
 # —————————————————————————————————————————
 # 4) Локальные модели и сериализаторы
 # —————————————————————————————————————————
-from .models import Equipment, Place, Status
-from .serializers import EquipmentSerializer, PlaceSerializer, StatusSerializer
+from .models import Equipment, Place, Status, Log
+from .serializers import EquipmentSerializer, PlaceSerializer, StatusSerializer, LogSerializer
 
+
+from rest_framework import viewsets
 
 class EquipmentListView(ListView):
     """
@@ -153,3 +155,8 @@ class StatusViewSet(generics.ListCreateAPIView):
     search_fields = [
         'name_of_status'
     ]
+
+
+class LogViewSet(viewsets.ModelViewSet):
+    queryset = Log.objects.all()
+    serializer_class = LogSerializer
