@@ -1,3 +1,5 @@
+from datetime import date
+from django.utils import timezone
 # —————————————————————————————————————————
 # 1) Django HTML‑генерики
 # —————————————————————————————————————————
@@ -16,7 +18,7 @@ from rest_framework import filters, generics, status
 from rest_framework.authentication import BasicAuthentication, SessionAuthentication
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
-
+from rest_framework.views import APIView
 # —————————————————————————————————————————
 # 4) Локальные модели и сериализаторы
 # —————————————————————————————————————————
@@ -160,3 +162,56 @@ class StatusViewSet(generics.ListCreateAPIView):
 class LogViewSet(viewsets.ModelViewSet):
     queryset = Log.objects.all()
     serializer_class = LogSerializer
+    
+
+    def patch(self, request):
+        if (not )
+
+
+
+class ReturnEquipmentAPIView(APIView):
+    def post(self, request):
+        equipment_id = request.data.get('equipment_id')
+
+        if not equipment_id:
+            return Response({"error": "equipment_id is required"}, status=status.HTTP_400_BAD_REQUEST)
+
+        try:
+            equipment = Equipment.objects.get(pk=equipment_id)
+        except Equipment.DoesNotExist:
+            return Response({"error": "Оборудование не найдено"}, status=status.HTTP_404_NOT_FOUND)
+
+        latest_log = Log.objects.filter(equipment=equipment).order_by('-start_date_of_using').first()
+
+        if not latest_log:
+            return Response({"error": "Нет записей в журнале для этого оборудования"}, status=status.HTTP_400_BAD_REQUEST)
+
+        try:
+            latest_log.end_date_of_using = timezone.now()  
+            if request.data.get('destination'):
+                latest_log.destination = request.data.get('destination')
+            if request.data.get('application_number'):
+                latest_log.application_number = request.data.get('application_number')
+            if request.data.get('name_of_receiver'):
+                latest_log.name_of_receiver = request.data.get('name_of_receiver')
+            latest_log.save()
+
+            equipment.status_id = 1  # Статус "доступно"
+            equipment.save()
+
+            return Response({
+                "success": True,
+                "message": "Оборудование успешно возвращено",
+                "log_id": latest_log.id
+            }, status=status.HTTP_200_OK)
+
+        except Exception as e:
+            return Response({
+                "error": f"Произошла ошибка: {str(e)}"
+            }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
+        except Exception as e:
+            # Ловим любые исключения и возвращаем ошибку
+            return Response({
+                "error": f"Произошла ошибка: {str(e)}"
+            }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)

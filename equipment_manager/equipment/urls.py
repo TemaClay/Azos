@@ -11,7 +11,8 @@ from equipment.views import (
     EquipmentRetrieveUpdateDestroyAPIView,
     PlaceListCreateAPIView,
     StatusViewSet,
-    LogViewSet
+    LogViewSet,
+    ReturnEquipmentAPIView
 )
 
 urlpatterns = [
@@ -53,7 +54,10 @@ urlpatterns = [
 
     # GET    /api/log/<pk>/   — детали
     # PATCH  /api/log/<pk>/   — частичное обновление
-    path('api/log/<pk>/', LogViewSet.as_view({'get': 'retrieve', 'patch': 'partial_update',}), name="log-detail")
+    path('api/log/<pk>/', LogViewSet.as_view({'get': 'retrieve', 'patch': 'partial_update',}), name="log-detail"),
+
+    # POST /api/equipment/return/ - id возвращаемого оборудования, с возможностью изменить destination, application_number, name_of_receiver в Log
+    path('api/equipment/return/', ReturnEquipmentAPIView.as_view(), name='equipment-return'),
 ]
 
 # Для обслуживания медиа-файлов (если нужно)

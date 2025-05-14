@@ -170,6 +170,7 @@ class SendEquipmentTab(QWidget):
 
             # Перезагружаем оборудование после отправки
             self.load_equipment()  # Обновление списка оборудования, чтобы оно исчезло из списка.
+            self.parent.return_tab.load_equipment_for_return()
 
         except requests.exceptions.RequestException as e:
             # Обработка ошибок при отправке
@@ -222,6 +223,14 @@ class ReturnEquipmentTab(QWidget):
         layout.addWidget(return_button)
 
         self.setLayout(layout)
+        self.new_destination = QLineEdit()
+        self.new_application_number = QLineEdit()
+        self.new_name_of_receiver = QLineEdit()
+
+        layout.addRow("Новое место назначения", self.new_destination)
+        layout.addRow("Новый номер заявки", self.new_application_number)
+        layout.addRow("Новый ответственный", self.new_name_of_receiver)
+
 
     def load_equipment_for_return(self):
         # Загружаем список оборудования с API
@@ -247,58 +256,57 @@ class ReturnEquipmentTab(QWidget):
             QMessageBox.critical(self, "Ошибка загрузки оборудования для возврата", str(e))
 
     def return_equipment(self):
-        # Получаем ID выбранного оборудования
         selected_equipment_id = self.return_equipment_input.currentData()
-        # Получаем все логи для этого оборудования через API
-        headers = {'Authorization': f'Bearer {self.parent.access_token}'}
+        headers = {
+            'Authorization': f'Bearer {self.parent.access_token}',
+            'Content-Type': 'application/json'
+        }
+
+        # Данные для возврата
+        data = {'equipment_id': selected_equipment_id}
+
+        # Проверяем, если поля для редактирования заполнены, добавляем их в данные
+        if self.new_destination.text().strip():
+            data['destination'] = self.new_destination.text().strip()
+
+        if self.new_application_number.text().strip():
+            data['application_number'] = self.new_application_number.text().strip()
+
+        if self.new_name_of_receiver.text().strip():
+            data['name_of_receiver'] = self.new_name_of_receiver.text().strip()
+
         try:
-            # Запрос на получение всех логов для оборудования
-            response = requests.get(f'http://127.0.0.1:8000/api/log/', headers=headers)
+            response = requests.post(
+                'http://127.0.0.1:8000/api/equipment/return/',
+                headers=headers,
+                json=data
+            )
             response.raise_for_status()
-            logs = response.json()
 
-            # Находим последний лог для выбранного оборудования
-            latest_log = None
-            for log in logs:
-                if log['equipment'] == selected_equipment_id:
-                    if latest_log is None or log['start_date_of_using'] > latest_log['start_date_of_using']:
-                        latest_log = log
-
-            if latest_log is None:
-                # Если нет записей в журнале для этого оборудования
-                QMessageBox.warning(self, "Ошибка", "Для этого оборудования нет записей.")
-                return
-
-            # Обновляем статус оборудования через API
-            update_data = {
-                'status_id': 1  # Статус "возвращено"
-            }
-            equipment_update_response = requests.patch(
-                f'http://127.0.0.1:8000/api/equipment/{selected_equipment_id}/', 
-                json=update_data, 
-                headers=headers
-            )
-            equipment_update_response.raise_for_status()
-
-            # Обновляем дату окончания использования в log через API
-            log_update_data = {
-                'end_date_of_using': QDate.currentDate().toString("yyyy-MM-dd")
-            }
-            log_update_response = requests.patch(
-                f'http://127.0.0.1:8000/api/log/{latest_log["id"]}/',
-                json=log_update_data,
-                headers=headers
-            )
-            log_update_response.raise_for_status()
-
+            # Оповещаем пользователя об успешном возврате
             QMessageBox.information(self, "Успех", "Оборудование возвращено.")
-
-            # Перезагружаем список оборудования для возврата, чтобы обновить его и исключить возвращенное оборудование
+            
+            # Перезагружаем оборудование
             self.load_equipment_for_return()
+            self.parent.sendLogTab.load_equipment()
+
+            # Очищаем поля
+            self.clear_fields()
 
         except requests.RequestException as e:
-            QMessageBox.critical(self, "Ошибка возврата оборудования", str(e))
+            try:
+                error = response.json()
+            except:
+                error = response.text
+            QMessageBox.critical(self, "Ошибка", f"Не удалось вернуть оборудование:\n{error}")
 
+
+
+
+    def clear_fields(self):
+        self.new_destination.clear()
+        self.new_application_number.clear()
+        self.new_name_of_receiver.clear()
 
 
 
