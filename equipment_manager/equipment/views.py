@@ -164,8 +164,7 @@ class LogViewSet(viewsets.ModelViewSet):
     serializer_class = LogSerializer
     
 
-    def patch(self, request):
-        if (not )
+    
 
 
 

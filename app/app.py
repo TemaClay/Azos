@@ -65,8 +65,8 @@ class LoginDialog(QDialog):
 
         try:
             response = requests.post(TOKEN_URL, data={
-                'username': "koptelov", #username
-                'password': "K66aercher" #password
+                'username': username,
+                'password': password
             })
             response.raise_for_status()
             tokens = response.json()
